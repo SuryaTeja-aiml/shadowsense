@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Direction Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('space.png') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(20, 20, 40, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(100, 100, 200, 0.3);
+        }
+
+        #compass {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            width: 150px;
+            height: 150px;
+            background: rgba(20, 20, 40, 0.9);
+            border-radius: 50%;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(100, 100, 200, 0.5);
+        }
+
+        #compass-image {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        #shadow-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 60px;
+            background: red;
+            transform-origin: bottom center;
+            transform: translate(-50%, -100%);
+            border-radius: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        #sun-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            background: url('sun.png') no-repeat center;
+            background-size: contain;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        #message {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: none;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .control-group button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 5px;
+            background-size: 20px 20px;
+            background-repeat: no-repeat;
+            background-position: 8px center;
+            padding-left: 35px;
+        }
+
+        .control-group button.add-person {
+            background-image: url('person.png');
+        }
+
+        .control-group button.reset {
+            background-image: url('reset_button.png');
+        }
+
+        .control-group button.add-object {
+            background-image: url('object.png');
+            background-size: 16px 16px;
+        }
+
+        .control-group button:hover {
+            background: #45a049;
+        }
+
+        #directionModal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            background: rgba(20, 20, 40, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(100, 100, 200, 0.3);
+            display: none;
+        }
+
+        #directionModal h3 {
+            margin-top: 0;
+        }
+
+        .direction-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .direction-btn {
+            padding: 10px;
+            border: 2px solid rgba(100, 100, 200, 0.5);
+            background: rgba(40, 40, 80, 0.8);
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .direction-btn:hover {
+            background: rgba(60, 60, 120, 0.9);
+            border-color: #4CAF50;
+        }
+
+        .scale-btn {
+            background: rgba(40, 40, 80, 0.8);
+            color: white;
+            border: 1px solid rgba(100, 100, 200, 0.5);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .scale-btn:hover {
+            background: rgba(60, 60, 120, 0.9);
+            border-color: #4CAF50;
+        }
+
+        .scale-btn.active {
+            background: #4CAF50;
+            border-color: #45a049;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+        }
+
+        .view-btn {
+            transition: all 0.3s ease;
+        }
+
+        .view-btn:hover {
+            background: rgba(60, 60, 120, 0.9) !important;
+            border-color: #4CAF50 !important;
+            transform: scale(1.1);
+        }
+
+        .view-btn.active {
+            background: #4CAF50 !important;
+            border-color: #45a049 !important;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="ui">
+            <div class="control-group">
+                <label>Sun Position:</label>
+                <input type="range" id="sunAngle" min="0" max="360" value="45" />
+                <span id="sunAngleValue">45°</span>
+            </div>
+            <div class="control-group">
+                <label>Sun Height:</label>
+                <input type="range" id="sunHeight" min="10" max="80" value="45" />
+                <span id="sunHeightValue">45°</span>
+                <span id="timeOfDay" style="margin-left: 10px; font-size: 12px; color: #666;"></span>
+            </div>
+            <div class="control-group">
+                <label>Sun Intensity: <span id="sunIntensity">100%</span></label>
+                <div
+                    style="width: 100%; height: 8px; background: linear-gradient(to right, #FFE4B5, #FFD700, #FFA500); border-radius: 4px; margin-top: 5px;">
+                    <div id="intensityBar"
+                        style="height: 100%; background: #FF6B35; border-radius: 4px; width: 75%; transition: width 0.3s;">
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Sun Movement:</label>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px; flex-wrap: wrap;">
+                    <button id="autoSunBtn" onclick="toggleAutoSun()" style="padding: 5px 10px; font-size: 12px;">▶️
+                        Auto</button>
+                    <select id="sunDirection" onchange="changeSunDirection()"
+                        style="padding: 5px; background: rgba(40, 40, 80, 0.8); color: white; border: 1px solid rgba(100, 100, 200, 0.5); border-radius: 3px;">
+                        <option value="clockwise">🔄 Clockwise</option>
+                        <option value="counterclockwise">🔃 Counter-Clockwise</option>
+                    </select>
+                </div>
+                <div style="margin-top: 5px;">
+                    <label style="font-size: 12px;">Speed: <span id="sunSpeed">1x</span></label>
+                    <input type="range" id="speedSlider" min="0.5" max="5" step="0.5" value="1"
+                        onchange="changeSunSpeed(this.value)" style="width: 100%; margin-top: 3px;" />
+                    <div
+                        style="display: flex; justify-content: space-between; font-size: 10px; color: #ccc; margin-top: 2px;">
+                        <span>0.5x</span>
+                        <span>2.5x</span>
+                        <span>5x</span>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <button class="add-object" onclick="addObject()">Add Object</button>
+                <button class="add-person" onclick="addPerson()">Add Person</button>
+                <button class="reset" onclick="resetScene()">Reset</button>
+            </div>
+            <div class="control-group">
+                <label>Sun Presets:</label>
+                <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
+                    <button onclick="setSunPreset('sunrise')" style="padding: 3px 8px; font-size: 11px;">🌅
+                        Sunrise</button>
+                    <button onclick="setSunPreset('noon')" style="padding: 3px 8px; font-size: 11px;">☀️ Noon</button>
+                    <button onclick="setSunPreset('sunset')" style="padding: 3px 8px; font-size: 11px;">🌇
+                        Sunset</button>
+                    <button onclick="setSunPreset('night')" style="padding: 3px 8px; font-size: 11px;">🌙 Night</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Instructions:</label>
+                <small>• Move sun sliders or use arrow keys<br>
+                    • Spacebar: Toggle auto sun movement<br>
+                    • R: Reverse sun direction<br>
+                    • 1-4: Sun presets (Sunrise/Noon/Sunset/Night)<br>
+                    • +/-: Scale objects up/down<br>
+                    • V: Cycle through viewpoints<br>
+                    • Drag objects to move them around<br>
+                    • Click objects to set their facing direction<br>
+                    • Right-click + drag to rotate view, scroll to zoom</small>
+            </div>
+            <div class="control-group">
+                <label>Shadow Learning:</label>
+                <small style="color: #666;">Shadows always point away from the sun</small>
+            </div>
+        </div>
+
+        <div id="compass">
+            <img id="compass-image" src="compass.png" alt="Compass" />
+            <div id="shadow-indicator"></div>
+            <div id="sun-indicator"></div>
+            <div
+                style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #333; text-align: center;">
+                <div style="color: #ff4444;">🔴 Shadow</div>
+                <div style="color: #ffaa00;">☀️ Sun</div>
+            </div>
+        </div>
+
+        <!-- Scale Controls -->
+        <div id="scaleControls"
+            style="position: absolute; bottom: 10px; right: 10px; z-index: 100; background: rgba(20, 20, 40, 0.9); color: white; padding: 10px; border-radius: 8px; border: 1px solid rgba(100, 100, 200, 0.3);">
+            <label style="font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Scale:</label>
+            <div style="display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap;"></div>
+            <button onclick="setScale(0.5)" class="scale-btn" data-scale="0.5"
+                style="padding: 4px 8px; font-size: 11px;">0.5x</button>
+            <button onclick="setScale(1)" class="scale-btn active" data-scale="1"
+                style="padding: 4px 8px; font-size: 11px;">1x</button>
+            <button onclick="setScale(2)" class="scale-btn" data-scale="2"
+                style="padding: 4px 8px; font-size: 11px;">2x</button>
+            <button onclick="setScale(3)" class="scale-btn" data-scale="3"
+                style="padding: 4px 8px; font-size: 11px;">3x</button>
+        </div>
+        <div style="display: flex; gap: 5px; font-size: 10px;">
+            <button onclick="scaleDown()"
+                style="padding: 2px 6px; background: rgba(40, 40, 80, 0.8); color: white; border: 1px solid rgba(100, 100, 200, 0.5); border-radius: 3px; cursor: pointer;">−</button>
+            <button onclick="scaleUp()"
+                style="padding: 2px 6px; background: rgba(40, 40, 80, 0.8); color: white; border: 1px solid rgba(100, 100, 200, 0.5); border-radius: 3px; cursor: pointer;">+</button>
+        </div>
+        <div style="font-size: 10px; color: #ccc;">Current: <span id="currentScale">1x</span></div>
+    </div>
+
+    <!-- Viewpoint Arrows -->
+    <div id="viewControls"
+        style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); z-index: 100;">
+        <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+            <button onclick="setViewpoint('top')" class="view-btn" title="Top View"
+                style="width: 40px; height: 40px; border-radius: 50%; background: rgba(20, 20, 40, 0.9); color: white; border: 1px solid rgba(100, 100, 200, 0.5); cursor: pointer; font-size: 16px;">⬆️</button>
+            <div style="display: flex; gap: 5px;">
+                <button onclick="setViewpoint('left')" class="view-btn" title="Left View"
+                    style="width: 40px; height: 40px; border-radius: 50%; background: rgba(20, 20, 40, 0.9); color: white; border: 1px solid rgba(100, 100, 200, 0.5); cursor: pointer; font-size: 16px;">⬅️</button>
+                <button onclick="setViewpoint('front')" class="view-btn active" title="Front View"
+                    style="width: 40px; height: 40px; border-radius: 50%; background: rgba(20, 20, 40, 0.9); color: white; border: 1px solid rgba(100, 100, 200, 0.5); cursor: pointer; font-size: 16px;">👁️</button>
+                <button onclick="setViewpoint('right')" class="view-btn" title="Right View"
+                    style="width: 40px; height: 40px; border-radius: 50%; background: rgba(20, 20, 40, 0.9); color: white; border: 1px solid rgba(100, 100, 200, 0.5); cursor: pointer; font-size: 16px;">➡️</button>
+            </div>
+            <button onclick="setViewpoint('bottom')" class="view-btn" title="Bottom View"
+                style="width: 40px; height: 40px; border-radius: 50%; background: rgba(20, 20, 40, 0.9); color: white; border: 1px solid rgba(100, 100, 200, 0.5); cursor: pointer; font-size: 16px;">⬇️</button>
+        </div>
+    </div>
+
+    <div id="message"></div>
+
+    <div id="directionModal">
+        <h3>Which direction is this object facing?</h3>
+        <div class="direction-buttons">
+            <div class="direction-btn" onclick="setDirection('NW')">NW<br>North West</div>
+            <div class="direction-btn" onclick="setDirection('N')">N<br>North</div>
+            <div class="direction-btn" onclick="setDirection('NE')">NE<br>North East</div>
+            <div class="direction-btn" onclick="setDirection('W')">W<br>West</div>
+            <div class="direction-btn" onclick="setDirection('C')">C<br>Center</div>
+            <div class="direction-btn" onclick="setDirection('E')">E<br>East</div>
+            <div class="direction-btn" onclick="setDirection('SW')">SW<br>South West</div>
+            <div class="direction-btn" onclick="setDirection('S')">S<br>South</div>
+            <div class="direction-btn" onclick="setDirection('SE')">SE<br>South East</div>
+        </div>
+        <button onclick="closeDirectionModal()">Cancel</button>
+    </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
